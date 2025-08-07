@@ -1,0 +1,16 @@
+<!-- SVG заглушка для этикеток возврата -->
+<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#fff3cd" stroke="#ffeaa7" stroke-width="2"/>
+  <text x="50%" y="30%" text-anchor="middle" font-family="Arial" font-size="16" fill="#856404">
+    Этикетки возврата
+  </text>
+  <text x="50%" y="40%" text-anchor="middle" font-family="Arial" font-size="14" fill="#856404">
+    Здесь будет фото
+  </text>
+  <text x="50%" y="50%" text-anchor="middle" font-family="Arial" font-size="14" fill="#856404">
+    правильного размещения этикеток
+  </text>
+  <text x="50%" y="70%" text-anchor="middle" font-family="Arial" font-size="12" fill="#b8860b">
+    return-labels.jpg
+  </text>
+</svg>

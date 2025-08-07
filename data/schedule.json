@@ -1,0 +1,209 @@
+{
+  "schedule": [
+    {
+      "day": "Esmaspäev (Понедельник)",
+      "day_short": "esmaspäev",
+      "companies": [
+        "AVALONE",
+        "BALMERK", 
+        "HENKEL",
+        "TRIDENS",
+        "SANITEX",
+        "PRIME PARTNER",
+        "INTERALTUS",
+        "KAUPMEES"
+      ]
+    },
+    {
+      "day": "Teisipäev (Вторник)",
+      "day_short": "teisipäev",
+      "companies": [
+        "SKAU",
+        "AVALONE",
+        "BALMERK",
+        "HENKEL", 
+        "JUNGET",
+        "VIA 3L",
+        "PRIME PARTNER",
+        "SANITEX",
+        "INTERALTUS"
+      ]
+    },
+    {
+      "day": "Kolmapäev (Среда)",
+      "day_short": "kolmapäev",
+      "companies": [
+        "JUNGET",
+        "HENKEL",
+        "SANITEX",
+        "MOBEC",
+        "INTERALTUS",
+        "TRIDENS",
+        "GUSTAV",
+        "GUSTAVKÜLA",
+        "COCA-COLA"
+      ]
+    },
+    {
+      "day": "Neljapäev (Четверг)",
+      "day_short": "neljapäev",
+      "companies": [
+        "VIA 3L",
+        "SVENSKY",
+        "JUNGET",
+        "PRIME PARTNER", 
+        "SANITEX",
+        "MOBEC",
+        "COCA-COLA",
+        "SMARTEN",
+        "LTT"
+      ]
+    },
+    {
+      "day": "Reede (Пятница)",
+      "day_short": "reede",
+      "companies": [
+        "JUNGET",
+        "COCA-COLA",
+        "BALMERK",
+        "KAUPMEES",
+        "PRIME PARTNER",
+        "SMARTEN",
+        "GUSTAV",
+        "GERUMND",
+        "LTT"
+      ]
+    },
+    {
+      "day": "Laupäev (Суббота)", 
+      "day_short": "laupäev",
+      "companies": [
+        "ALE COQ",
+        "SMARTEN",
+        "SÜGAVKÜLM",
+        "GERUMND",
+        "REVAL",
+        "D.T.L"
+      ]
+    }
+  ],
+  "companies_info": {
+    "AVALONE": {
+      "type": "food",
+      "contact": "",
+      "notes": ""
+    },
+    "BALMERK": {
+      "type": "food", 
+      "contact": "",
+      "notes": ""
+    },
+    "HENKEL": {
+      "type": "chemicals",
+      "contact": "",
+      "notes": "Бытовая химия"
+    },
+    "TRIDENS": {
+      "type": "food",
+      "contact": "",
+      "notes": ""
+    },
+    "SANITEX": {
+      "type": "hygiene",
+      "contact": "",
+      "notes": "Гигиенические товары"
+    },
+    "PRIME PARTNER": {
+      "type": "mixed",
+      "contact": "",
+      "notes": ""
+    },
+    "INTERALTUS": {
+      "type": "mixed",
+      "contact": "",
+      "notes": ""
+    },
+    "KAUPMEES": {
+      "type": "retail",
+      "contact": "",
+      "notes": ""
+    },
+    "SKAU": {
+      "type": "mixed",
+      "contact": "",
+      "notes": ""
+    },
+    "JUNGET": {
+      "type": "food",
+      "contact": "",
+      "notes": ""
+    },
+    "VIA 3L": {
+      "type": "mixed",
+      "contact": "",
+      "notes": ""
+    },
+    "MOBEC": {
+      "type": "mixed",
+      "contact": "",
+      "notes": ""
+    },
+    "GUSTAV": {
+      "type": "food",
+      "contact": "",
+      "notes": ""
+    },
+    "GUSTAVKÜLA": {
+      "type": "food",
+      "contact": "",
+      "notes": ""
+    },
+    "COCA-COLA": {
+      "type": "beverages",
+      "contact": "",
+      "notes": "Напитки"
+    },
+    "SVENSKY": {
+      "type": "mixed",
+      "contact": "",
+      "notes": ""
+    },
+    "SMARTEN": {
+      "type": "mixed",
+      "contact": "",
+      "notes": ""
+    },
+    "LTT": {
+      "type": "mixed", 
+      "contact": "",
+      "notes": ""
+    },
+    "GERUMND": {
+      "type": "mixed",
+      "contact": "",
+      "notes": ""
+    },
+    "ALE COQ": {
+      "type": "beverages",
+      "contact": "",
+      "notes": "Пиво и напитки"
+    },
+    "SÜGAVKÜLM": {
+      "type": "frozen",
+      "contact": "",
+      "notes": "Замороженные продукты"
+    },
+    "REVAL": {
+      "type": "mixed",
+      "contact": "",
+      "notes": ""
+    },
+    "D.T.L": {
+      "type": "mixed",
+      "contact": "",
+      "notes": ""
+    }
+  },
+  "last_updated": "2025-08-07T00:00:00Z",
+  "version": "1.0"
+}

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель - Estakaadi Planner</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Navigation Header -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-danger">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="index.html">
+                <i class="bi bi-gear"></i> Админ-панель
+            </a>
+            
+            <div class="d-flex align-items-center">
+                <span class="text-light me-3">Администратор: <span id="admin-name">Admin</span></span>
+                <a href="index.html" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-arrow-left"></i> Назад
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="list-group">
+                    <a href="#users" class="list-group-item list-group-item-action active" data-bs-toggle="tab">
+                        <i class="bi bi-people"></i> Пользователи
+                    </a>
+                    <a href="#data" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="bi bi-database"></i> Данные
+                    </a>
+                    <a href="#settings" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="bi bi-gear"></i> Настройки
+                    </a>
+                    <a href="#logs" class="list-group-item list-group-item-action" data-bs-toggle="tab">
+                        <i class="bi bi-journal-text"></i> Логи
+                    </a>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <div class="tab-content">
+                    <!-- Users Tab -->
+                    <div class="tab-pane fade show active" id="users">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>Управление пользователями</h4>
+                            <button class="btn btn-success" onclick="showAddUserModal()">
+                                <i class="bi bi-plus"></i> Добавить пользователя
+                            </button>
+                        </div>
+                        
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Логин</th>
+                                                <th>Имя</th>
+                                                <th>Роль</th>
+                                                <th>Последний вход</th>
+                                                <th>Действия</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="users-table">
+                                            <!-- Users will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Data Tab -->
+                    <div class="tab-pane fade" id="data">
+                        <h4>Управление данными</h4>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Экспорт данных</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p>Скачать все данные системы в формате JSON</p>
+                                        <button class="btn btn-info" onclick="exportAllData()">
+                                            <i class="bi bi-download"></i> Экспорт всех данных
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5>Импорт данных</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p>Загрузить данные из файла JSON</p>
+                                        <input type="file" class="form-control mb-3" id="import-file" accept=".json">
+                                        <button class="btn btn-warning" onclick="importAllData()">
+                                            <i class="bi bi-upload"></i> Импорт данных
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card border-danger">
+                                    <div class="card-header bg-danger text-white">
+                                        <h5>Опасная зона</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="text-danger">
+                                            <strong>Внимание!</strong> Эти действия нельзя отменить.
+                                        </p>
+                                        <button class="btn btn-danger" onclick="clearAllData()">
+                                            <i class="bi bi-trash"></i> Очистить все данные
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Settings Tab -->
+                    <div class="tab-pane fade" id="settings">
+                        <h4>Настройки системы</h4>
+                        
+                        <div class="card">
+                            <div class="card-body">
+                                <form id="settings-form">
+                                    <div class="mb-3">
+                                        <label class="form-label">Язык по умолчанию</label>
+                                        <select class="form-select" id="default-language">
+                                            <option value="ru">Русский</option>
+                                            <option value="ee">Eesti</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Название компании</label>
+                                        <input type="text" class="form-control" id="company-name" value="Selver Estakaad">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="auto-logout">
+                                            <label class="form-check-label" for="auto-logout">
+                                                Автоматический выход через 8 часов
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save"></i> Сохранить настройки
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logs Tab -->
+                    <div class="tab-pane fade" id="logs">
+                        <h4>Логи системы</h4>
+                        
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <h5 class="mb-0">Последние действия</h5>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="refreshLogs()">
+                                            <i class="bi bi-arrow-clockwise"></i> Обновить
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div id="logs-container">
+                                    <!-- Logs will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div class="modal fade" id="addUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить пользователя</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="add-user-form">
+                        <div class="mb-3">
+                            <label class="form-label">Логин</label>
+                            <input type="text" class="form-control" id="new-username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Имя</label>
+                            <input type="text" class="form-control" id="new-name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Пароль</label>
+                            <input type="password" class="form-control" id="new-password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Роль</label>
+                            <select class="form-select" id="new-role">
+                                <option value="user">Пользователь</option>
+                                <option value="admin">Администратор</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-success" onclick="addNewUser()">Добавить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="js/main.js"></script>
+    
+    <script>
+        // Admin Panel JavaScript
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAdminAuth();
+            loadUsersTable();
+            loadLogs();
+        });
+
+        function checkAdminAuth() {
+            const user = JSON.parse(localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser') || '{}');
+            
+            if (!user.username || user.role !== 'admin') {
+                alert('Доступ запрещен. Требуются права администратора.');
+                window.location.href = 'login.html';
+                return;
+            }
+            
+            document.getElementById('admin-name').textContent = user.name || user.username;
+        }
+
+        function loadUsersTable() {
+            const tbody = document.getElementById('users-table');
+            tbody.innerHTML = users.map(user => `
+                <tr>
+                    <td>${user.username}</td>
+                    <td>${user.name}</td>
+                    <td>
+                        <span class="badge ${user.role === 'admin' ? 'bg-danger' : 'bg-primary'}">
+                            ${user.role === 'admin' ? 'Администратор' : 'Пользователь'}
+                        </span>
+                    </td>
+                    <td>Недавно</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser('${user.username}')" 
+                                ${user.username === 'maksim' ? 'disabled' : ''}>
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showAddUserModal() {
+            new bootstrap.Modal(document.getElementById('addUserModal')).show();
+        }
+
+        function addNewUser() {
+            const username = document.getElementById('new-username').value;
+            const name = document.getElementById('new-name').value;
+            const password = document.getElementById('new-password').value;
+            const role = document.getElementById('new-role').value;
+
+            if (!username || !name || !password) {
+                alert('Заполните все поля');
+                return;
+            }
+
+            if (users.find(u => u.username === username)) {
+                alert('Пользователь с таким логином уже существует');
+                return;
+            }
+
+            users.push({ username, name, password, role });
+            loadUsersTable();
+            
+            // Close modal and reset form
+            bootstrap.Modal.getInstance(document.getElementById('addUserModal')).hide();
+            document.getElementById('add-user-form').reset();
+            
+            alert('Пользователь добавлен');
+        }
+
+        function deleteUser(username) {
+            if (username === 'maksim') {
+                alert('Нельзя удалить главного администратора');
+                return;
+            }
+
+            if (confirm('Удалить пользователя?')) {
+                const index = users.findIndex(u => u.username === username);
+                if (index > -1) {
+                    users.splice(index, 1);
+                    loadUsersTable();
+                    alert('Пользователь удален');
+                }
+            }
+        }
+
+        function exportAllData() {
+            const data = {
+                users: users,
+                packagings: JSON.parse(localStorage.getItem('packagings') || '[]'),
+                returns: JSON.parse(localStorage.getItem('returns') || '[]'),
+                notes: JSON.parse(localStorage.getItem('notes') || '[]'),
+                settings: JSON.parse(localStorage.getItem('settings') || '{}'),
+                exportDate: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `estakaadi-full-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            
+            URL.revokeObjectURL(url);
+        }
+
+        function importAllData() {
+            const input = document.getElementById('import-file');
+            const file = input.files[0];
+            
+            if (!file) {
+                alert('Выберите файл для импорта');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (confirm('Это заменит все текущие данные. Продолжить?')) {
+                        if (data.packagings) localStorage.setItem('packagings', JSON.stringify(data.packagings));
+                        if (data.returns) localStorage.setItem('returns', JSON.stringify(data.returns));
+                        if (data.notes) localStorage.setItem('notes', JSON.stringify(data.notes));
+                        if (data.settings) localStorage.setItem('settings', JSON.stringify(data.settings));
+                        
+                        alert('Данные успешно импортированы');
+                        location.reload();
+                    }
+                } catch (error) {
+                    alert('Ошибка при чтении файла: ' + error.message);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAllData() {
+            if (confirm('Вы уверены? Все данные будут безвозвратно удалены!')) {
+                if (confirm('Последнее предупреждение! Удалить ВСЕ данные?')) {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    alert('Все данные удалены');
+                    window.location.href = 'login.html';
+                }
+            }
+        }
+
+        function refreshLogs() {
+            loadLogs();
+        }
+
+        function loadLogs() {
+            const container = document.getElementById('logs-container');
+            const logs = JSON.parse(localStorage.getItem('logs') || '[]');
+            
+            if (logs.length === 0) {
+                container.innerHTML = '<p class="text-muted">Логи пусты</p>';
+                return;
+            }
+
+            container.innerHTML = logs.slice(-50).reverse().map(log => `
+                <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                    <div>
+                        <strong>${log.action}</strong> - ${log.user}
+                        <br>
+                        <small class="text-muted">${log.details || ''}</small>
+                    </div>
+                    <small class="text-muted">${new Date(log.timestamp).toLocaleString()}</small>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
