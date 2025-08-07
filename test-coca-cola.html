@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест инструкций Coca-Cola</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Тест инструкций по упаковке - Coca-Cola</h1>
+        
+        <button class="btn btn-primary mb-3" onclick="showInstructions()">
+            Показать инструкции Coca-Cola
+        </button>
+        
+        <div id="instructions-container"></div>
+    </div>
+    
+    <!-- Modal для полноразмерных изображений -->
+    <div class="modal fade" id="imageModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Фото инструкция</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img id="fullImage" class="img-fluid" src="" alt="">
+                    <p id="imageCaption" class="mt-2"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showInstructions() {
+            const container = document.getElementById('instructions-container');
+            
+            const instructions = {
+                images: [
+                    {
+                        src: 'img/instructions/pallet-example.svg',
+                        alt: 'Типы палет',
+                        description: 'Целые палеты, 1/2 и 1/4 палеты'
+                    },
+                    {
+                        src: 'img/instructions/drink-stands.svg',
+                        alt: 'Подставки',
+                        description: 'Различные типы подставок'
+                    },
+                    {
+                        src: 'img/instructions/brands/coca-cola/wooden-base-1-4.jpg',
+                        alt: 'Coca-Cola - Деревянная основа',
+                        description: 'Деревянная основа для палет 1-4'
+                    },
+                    {
+                        src: 'img/instructions/brands/coca-cola/packing-example-1.jpg',
+                        alt: 'Coca-Cola - Пример 1',
+                        description: 'Базовое размещение продукции'
+                    },
+                    {
+                        src: 'img/instructions/brands/coca-cola/packing-example-2.jpg',
+                        alt: 'Coca-Cola - Пример 2',
+                        description: 'Способ укладки для стеклянных бутылок'
+                    }
+                ],
+                steps: [
+                    '1. Определить тип палеты (целая, 1/2, 1/4)',
+                    '2. Проверить состояние палеты и подставок',
+                    '3. Разместить подставки согласно требованиям компании',
+                    '4. Закрепить упаковочной пленкой при необходимости',
+                    '5. Прикрепить этикетку с данными компании и типом палеты'
+                ]
+            };
+            
+            container.innerHTML = `
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Инструкции по упаковке - Coca-Cola</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>Типы палет и подставок</h6>
+                        <div class="row mb-3">
+                            ${instructions.images.map(img => `
+                                <div class="col-md-6 mb-2">
+                                    <img src="${img.src}" class="img-fluid rounded" 
+                                         alt="${img.alt}" onclick="showFullImage('${img.src}', '${img.alt}')"
+                                         onerror="handleImageError(this, '${img.src}')"
+                                         style="cursor: pointer; min-height: 150px; border: 1px solid #ddd;">
+                                    <small class="d-block text-muted mt-1">${img.description}</small>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <h6>Шаги упаковки палет</h6>
+                        <ol>
+                            ${instructions.steps.map(step => `<li class="mb-2">${step}</li>`).join('')}
+                        </ol>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showFullImage(src, alt) {
+            const modal = document.getElementById('imageModal');
+            const img = modal.querySelector('#fullImage');
+            const caption = modal.querySelector('#imageCaption');
+            
+            img.src = src;
+            img.alt = alt;
+            caption.textContent = alt;
+            
+            new bootstrap.Modal(modal).show();
+        }
+        
+        function handleImageError(imgElement, originalSrc) {
+            imgElement.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPtCk0L7RgtC+INC90LUg0LfQsNCz0YDRg9C30LjQu9Cw0YHRjDwvdGV4dD48L3N2Zz4=';
+            imgElement.alt = 'Фото не загрузилось';
+            imgElement.title = `Не удалось загрузить: ${originalSrc}`;
+            imgElement.style.border = '2px dashed #dc3545';
+            imgElement.style.opacity = '0.7';
+            console.error('Failed to load image:', originalSrc);
+        }
+    </script>
+</body>
+</html>

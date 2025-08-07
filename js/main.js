@@ -7,26 +7,49 @@ let translations = {};
 let currentCalendarDate = new Date();
 let selectedEventId = null;
 
-// User database (in production, this would be in a proper database)
-const users = [
-    { username: "maksim", password: "123", role: "admin", name: "Максим" },
-    { username: "admin", password: "321", role: "admin", name: "Администратор" },
-    { username: "boss", password: "321", role: "admin", name: "Начальник" },
-    { username: "dima", password: "456", role: "admin", name: "Дима" },
-    { username: "worker1", password: "111", role: "user", name: "Сотрудник 1" },
-    { username: "worker2", password: "222", role: "user", name: "Сотрудник 2" }
-];
+// Storage adapter functions
+async function getUsers() {
+    if (typeof storage !== 'undefined' && storage.isLoaded) {
+        return storage.get('users') || [];
+    }
+    // Fallback to hardcoded users
+    return [
+        { id: "admin_001", username: "maksim", password: "123", role: "admin", name: "Максим" },
+        { id: "admin_002", username: "admin", password: "321", role: "admin", name: "Администратор" },
+        { id: "admin_003", username: "boss", password: "321", role: "admin", name: "Начальник" },
+        { id: "admin_004", username: "dima", password: "456", role: "admin", name: "Дима" },
+        { id: "user_001", username: "worker1", password: "111", role: "user", name: "Сотрудник 1" },
+        { id: "user_002", username: "worker2", password: "222", role: "user", name: "Сотрудник 2" }
+    ];
+}
+
+async function saveUser(userData) {
+    if (typeof storage !== 'undefined' && storage.isLoaded) {
+        if (userData.id) {
+            return await storage.update('users', userData.id, userData, currentUser?.username || 'system');
+        } else {
+            return await storage.add('users', userData, currentUser?.username || 'system');
+        }
+    }
+    return false;
+}
 
 // Authentication functions
-function login(username, password, remember = false) {
+async function login(username, password, remember = false) {
+    const users = await getUsers();
     const user = users.find(u => u.username === username && u.password === password);
     
     if (user) {
         currentUser = user;
         
         // Store in session or local storage
-        const storage = remember ? localStorage : sessionStorage;
-        storage.setItem('currentUser', JSON.stringify(user));
+        const storageType = remember ? localStorage : sessionStorage;
+        storageType.setItem('currentUser', JSON.stringify(user));
+        
+        // Log login activity
+        if (typeof storage !== 'undefined' && storage.isLoaded) {
+            storage.addLog('user_login', `User ${username} logged in`, username);
+        }
         
         return true;
     }
@@ -35,6 +58,10 @@ function login(username, password, remember = false) {
 }
 
 function logout() {
+    if (typeof storage !== 'undefined' && storage.isLoaded && currentUser) {
+        storage.addLog('user_logout', `User ${currentUser.username} logged out`, currentUser.username);
+    }
+    
     currentUser = null;
     localStorage.removeItem('currentUser');
     sessionStorage.removeItem('currentUser');
@@ -145,17 +172,28 @@ function showTab(tabName) {
 // Schedule functions
 async function loadSchedule() {
     try {
-        const response = await fetch('data/schedule.json');
-        const scheduleData = await response.json();
+        let scheduleData;
+        
+        // Try to load from new storage system
+        if (typeof storage !== 'undefined' && storage.isLoaded) {
+            scheduleData = storage.get('schedule');
+        }
+        
+        // Fallback to old JSON file
+        if (!scheduleData) {
+            const response = await fetch('data/schedule.json');
+            const jsonData = await response.json();
+            scheduleData = jsonData.schedule || jsonData;
+        }
         
         const tableBody = document.querySelector('#schedule-table tbody');
         if (tableBody) {
             tableBody.innerHTML = '';
             
-            scheduleData.schedule.forEach(day => {
+            scheduleData.forEach(day => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td><strong>${day.day}</strong></td>
+                    <td><strong>${day.dayName || day.day}</strong></td>
                     <td>${day.companies.join(', ')}</td>
                 `;
                 tableBody.appendChild(row);
@@ -163,7 +201,7 @@ async function loadSchedule() {
         }
         
         // Update today's deliveries on dashboard
-        updateTodayDeliveries(scheduleData);
+        updateTodayDeliveries({ schedule: scheduleData });
         
     } catch (error) {
         console.error('Error loading schedule:', error);
@@ -350,19 +388,26 @@ function showPackagingInstructions(company) {
     const instructions = getPackagingInstructions(company);
     
     modalBody.innerHTML = `
-        <div class="instruction-content">
-            <h6>${translations.pallets_info || 'Типы палет и подставок'}</h6>
+        <div class="instruction-content animate-fade-in">
+            <h6 class="animate-slide-up">${translations.pallets_info || 'Типы палет и подставок'}</h6>
             <div class="row mb-3">
-                ${instructions.images.map(img => `
-                    <div class="col-md-6 mb-2">
-                        <img src="${img.src}" class="img-fluid rounded instruction-image" 
-                             alt="${img.alt}" onclick="showFullImage('${img.src}', '${img.alt}')">
+                ${instructions.images.map((img, index) => `
+                    <div class="col-md-6 mb-2 animate-fade-in animate-delay-${index + 1}">
+                        <img src="${img.src}" class="img-fluid rounded instruction-image hover-lift" 
+                             alt="${img.alt}" onclick="showFullImage('${img.src}', '${img.alt}')"
+                             onerror="handleImageError(this, '${img.src}')">
                         <small class="d-block text-muted mt-1">${img.description}</small>
                     </div>
                 `).join('')}
             </div>
+            ${instructions.images.some(img => img.src.includes('.heic')) ? `
+                <div class="alert alert-info alert-sm animate-slide-up">
+                    <i class="bi bi-info-circle icon-pulse"></i> 
+                    Некоторые фото в формате HEIC. Если они не отображаются, используйте современный браузер (Chrome 98+, Safari, Edge).
+                </div>
+            ` : ''}
             
-            <h6>${translations.packing_steps || 'Шаги упаковки палет'}</h6>
+            <h6 class="animate-slide-up" style="animation-delay: 0.3s;">${translations.packing_steps || 'Шаги упаковки палет'}</h6>
             <ol class="packing-steps">
                 ${instructions.steps.map(step => `
                     <li class="mb-2">${step}</li>
@@ -370,7 +415,7 @@ function showPackagingInstructions(company) {
             </ol>
             
             ${instructions.notes ? `
-                <div class="alert alert-info">
+                <div class="alert alert-info animate-zoom-in" style="animation-delay: 0.5s;">
                     <i class="bi bi-info-circle"></i> ${instructions.notes}
                 </div>
             ` : ''}
@@ -405,8 +450,114 @@ function getPackagingInstructions(company) {
         notes: translations.packing_notes || 'Внимание: учитывайте размеры палет при размещении подставок'
     };
     
-    // Специальные инструкции для разных компаний
+    // Специальные инструкции для разных компаний с фотопримерами
     const companyInstructions = {
+        'ALE COQ': {
+            ...defaultInstructions,
+            images: [
+                ...defaultInstructions.images,
+                {
+                    src: 'img/A. Le coq/converted/File 08.03.2025, 17 13 47 (1).jpg',
+                    alt: 'A. Le Coq - Пример 1',
+                    description: 'Пример упаковки A. Le Coq - основной способ'
+                },
+                {
+                    src: 'img/A. Le coq/converted/File 08.03.2025, 17 13 47 (2).jpg',
+                    alt: 'A. Le Coq - Пример 2',
+                    description: 'Альтернативное размещение подставок'
+                },
+                {
+                    src: 'img/A. Le coq/converted/IMG_1695.jpg',
+                    alt: 'A. Le Coq - Пример 3',
+                    description: 'Маркировка и этикетирование'
+                }
+            ]
+        },
+        'COCA-COLA': {
+            ...defaultInstructions,
+            images: [
+                ...defaultInstructions.images,
+                {
+                    src: 'img/instructions/brands/coca-cola/wooden-base-1-4.jpg',
+                    alt: 'Coca-Cola - Деревянная основа',
+                    description: 'Деревянная основа для палет 1-4'
+                },
+                {
+                    src: 'img/instructions/brands/coca-cola/packing-example-1.jpg',
+                    alt: 'Coca-Cola - Пример 1',
+                    description: 'Базовое размещение продукции'
+                },
+                {
+                    src: 'img/instructions/brands/coca-cola/packing-example-2.jpg',
+                    alt: 'Coca-Cola - Пример 2',
+                    description: 'Способ укладки для стеклянных бутылок'
+                }
+            ]
+        },
+        'KAUPMEES': {
+            ...defaultInstructions,
+            images: [
+                ...defaultInstructions.images,
+                {
+                    src: 'img/Kaupmees/converted/File 08.03.2025, 17 15 17 (1).jpg',
+                    alt: 'Kaupmees - Пример 1',
+                    description: 'Стандартная упаковка Kaupmees'
+                },
+                {
+                    src: 'img/Kaupmees/converted/File 08.03.2025, 17 15 17 (2).jpg',
+                    alt: 'Kaupmees - Пример 2',
+                    description: 'Размещение этикеток и маркировка'
+                }
+            ]
+        },
+        'MOBEC': {
+            ...defaultInstructions,
+            images: [
+                ...defaultInstructions.images,
+                {
+                    src: 'img/Mobec/converted/File 08.03.2025, 17 14 23.jpg',
+                    alt: 'Mobec - Пример',
+                    description: 'Упаковка продукции Mobec'
+                }
+            ]
+        },
+        'SMARTEN': {
+            ...defaultInstructions,
+            images: [
+                ...defaultInstructions.images,
+                {
+                    src: 'img/Smarten/converted/File 08.03.2025, 17 09 30 (1).jpg',
+                    alt: 'Smarten - Пример 1',
+                    description: 'Упаковка продукции Smarten'
+                },
+                {
+                    src: 'img/Smarten/converted/File 08.03.2025, 17 09 30 (2).jpg',
+                    alt: 'Smarten - Пример 2',
+                    description: 'Правильная маркировка'
+                }
+            ]
+        },
+        'SAKU': {
+            ...defaultInstructions,
+            images: [
+                ...defaultInstructions.images,
+                {
+                    src: 'img/Saku/converted/File 08.03.2025, 17 17 36 (1).jpg',
+                    alt: 'Saku - Пример 1',
+                    description: 'Упаковка продукции Saku'
+                },
+                {
+                    src: 'img/Saku/converted/File 08.03.2025, 17 17 36 (2).jpg',
+                    alt: 'Saku - Пример 2',
+                    description: 'Правильная маркировка Saku'
+                },
+                {
+                    src: 'img/Saku/converted/File 08.03.2025, 17 17 36 (3).jpg',
+                    alt: 'Saku - Пример 3',
+                    description: 'Альтернативная упаковка'
+                }
+            ]
+        },
         'Selver': {
             ...defaultInstructions,
             steps: [
@@ -460,6 +611,20 @@ function showFullImage(src, alt) {
     caption.textContent = alt;
     
     new bootstrap.Modal(modal).show();
+}
+
+function handleImageError(imgElement, originalSrc) {
+    // Replace broken image with placeholder
+    imgElement.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZGRkIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPtCk0L7RgtC+INC90LUg0LfQsNCz0YDRg9C30LjQu9Cw0YHRjDwvdGV4dD48L3N2Zz4=';
+    imgElement.alt = 'Фото не загрузилось';
+    imgElement.title = `Не удалось загрузить: ${originalSrc}`;
+    
+    // Add error styling
+    imgElement.style.border = '2px dashed #dc3545';
+    imgElement.style.opacity = '0.7';
+    
+    // Show console error for debugging
+    console.error('Failed to load image:', originalSrc);
 }
 
 function createImageModal() {
@@ -534,20 +699,20 @@ function updateTodayDeliveries(scheduleData = null) {
             const todayArrivals = arrivals[today] || [];
             
             container.innerHTML = `
-                <h6>${translations.dashboard_today_companies || 'Компании сегодня'}:</h6>
+                <h6 class="animate-fade-in">${translations.dashboard_today_companies || 'Компании сегодня'}:</h6>
                 <div class="d-flex flex-wrap gap-1 mb-3">
-                    ${todaySchedule.companies.map(company => {
+                    ${todaySchedule.companies.map((company, index) => {
                         const hasArrived = todayArrivals.includes(company);
                         return `
-                            <span class="badge company-arrival ${hasArrived ? 'bg-success' : 'bg-primary'}" 
+                            <span class="badge company-arrival hover-scale animate-fade-in animate-delay-${index + 1} ${hasArrived ? 'bg-success' : 'bg-primary'}" 
                                   onclick="toggleCompanyArrival('${company}')" 
-                                  style="cursor: pointer;" 
+                                  style="cursor: pointer; animation-delay: ${index * 0.1}s;" 
                                   title="${hasArrived ? 'Прибыл' : 'Ожидается'}">${company}</span>
                         `;
                     }).join('')}
                 </div>
-                <small class="text-muted">
-                    <i class="bi bi-info-circle"></i> ${translations.click_to_mark_arrived || 'Нажмите на компанию чтобы отметить прибытие'}
+                <small class="text-muted animate-slide-up" style="animation-delay: 0.5s;">
+                    <i class="bi bi-info-circle icon-pulse"></i> ${translations.click_to_mark_arrived || 'Нажмите на компанию чтобы отметить прибытие'}
                 </small>
             `;
         } else {
@@ -574,11 +739,20 @@ function initPackagingForm() {
         // Load companies for the select
         loadCompaniesForSelect('packaging-company');
         
+        // Add event listener for company select to enable/disable instructions button
+        const companySelect = document.getElementById('packaging-company');
+        if (companySelect) {
+            companySelect.addEventListener('change', updateInstructionsButton);
+        }
+        
         // Add initial packaging item
         addPackagingItem();
         
         // Load existing packaging data
         loadPackagingData();
+        
+        // Initialize instructions button state
+        updateInstructionsButton();
     }
 }
 
@@ -709,6 +883,17 @@ function addPackaging() {
     
     localStorage.setItem('packagings', JSON.stringify(packagings));
     
+    // Show success animation and notification
+    const form = document.getElementById('packaging-form');
+    showSuccessAnimation(form);
+    
+    if (currentEditingPackagingId) {
+        createFloatingNotification(translations.packaging_updated || 'Упаковка обновлена', 'success');
+        currentEditingPackagingId = null;
+    } else {
+        createFloatingNotification(translations.packaging_saved || 'Упаковка сохранена', 'success');
+    }
+    
     // Reset form
     resetPackagingForm();
     
@@ -775,17 +960,17 @@ function loadPackagingData() {
         }
         
         html += `
-            <div class="col-md-6 mb-3">
-                <div class="card">
+            <div class="col-md-6 mb-3 animate-fade-in" style="animation-delay: ${packaging.id % 10 * 0.1}s;">
+                <div class="card card-animated hover-lift">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <h6 class="card-title mb-0">${packaging.company}</h6>
                             <div class="btn-group btn-group-sm">
                                 ${(currentUser.role === 'admin' || packaging.user === currentUser.username) ? `
-                                    <button class="btn btn-outline-primary btn-sm" onclick="editPackaging(${packaging.id})" title="${translations.edit || 'Редактировать'}">
+                                    <button class="btn btn-outline-primary btn-sm btn-animated hover-glow" onclick="editPackaging(${packaging.id})" title="${translations.edit || 'Редактировать'}">
                                         <i class="bi bi-pencil"></i>
                                     </button>
-                                    <button class="btn btn-outline-danger btn-sm" onclick="deletePackaging(${packaging.id})" title="${translations.delete || 'Удалить'}">
+                                    <button class="btn btn-outline-danger btn-sm btn-animated hover-scale" onclick="deletePackaging(${packaging.id})" title="${translations.delete || 'Удалить'}">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 ` : ''}
@@ -1102,11 +1287,19 @@ function getReturnsInstructions(company) {
 }
 
 // Notes functions
-function loadNotes() {
+async function loadNotes() {
     const container = document.getElementById('notes-container');
     if (!container) return;
     
-    const notes = JSON.parse(localStorage.getItem('notes') || '[]');
+    let notes = [];
+    
+    // Try to load from new storage system
+    if (typeof storage !== 'undefined' && storage.isLoaded) {
+        notes = storage.get('notes') || [];
+    } else {
+        // Fallback to localStorage
+        notes = JSON.parse(localStorage.getItem('notes') || '[]');
+    }
     
     if (notes.length === 0) {
         container.innerHTML = `<p class="text-muted">${translations.no_notes || 'Заметок пока нет'}</p>`;
@@ -1121,15 +1314,15 @@ function loadNotes() {
                         <h6 class="card-title">${note.title || translations.note_no_title || 'Без названия'}</h6>
                         <p class="card-text">${note.content}</p>
                         <small class="text-muted">
-                            ${note.user} - ${new Date(note.timestamp).toLocaleString()}
+                            ${note.user || note.createdBy} - ${new Date(note.timestamp || note.createdAt).toLocaleString()}
                         </small>
                     </div>
                     <div>
-                        ${(currentUser.role === 'admin' || currentUser.username === note.user) ? `
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editNote(${note.id})">
+                        ${(currentUser.role === 'admin' || currentUser.username === (note.user || note.createdBy)) ? `
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editNote('${note.id}')">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="deleteNote(${note.id})">
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteNote('${note.id}')">
                                 <i class="bi bi-trash"></i>
                             </button>
                         ` : ''}
@@ -1140,7 +1333,7 @@ function loadNotes() {
     `).join('');
 }
 
-function addNote() {
+async function addNote() {
     const title = prompt(translations.note_title_prompt || 'Введите заголовок заметки:');
     if (!title) return;
     
@@ -1148,29 +1341,45 @@ function addNote() {
     if (!content) return;
     
     const note = {
-        id: Date.now(),
         title,
         content,
-        user: currentUser.username,
-        timestamp: new Date().toISOString()
+        user: currentUser.username // Keep for compatibility
     };
     
-    const notes = JSON.parse(localStorage.getItem('notes') || '[]');
-    notes.push(note);
-    localStorage.setItem('notes', JSON.stringify(notes));
+    // Try to save to new storage system first
+    if (typeof storage !== 'undefined' && storage.isLoaded) {
+        await storage.add('notes', note, currentUser.username);
+    } else {
+        // Fallback to localStorage
+        note.id = Date.now();
+        note.timestamp = new Date().toISOString();
+        const notes = JSON.parse(localStorage.getItem('notes') || '[]');
+        notes.push(note);
+        localStorage.setItem('notes', JSON.stringify(notes));
+    }
     
     loadNotes();
     loadDashboardData(); // Update dashboard
 }
 
-function editNote(noteId) {
-    const notes = JSON.parse(localStorage.getItem('notes') || '[]');
-    const note = notes.find(n => n.id === noteId);
+async function editNote(noteId) {
+    let notes, note;
+    
+    // Try to get from new storage system first
+    if (typeof storage !== 'undefined' && storage.isLoaded) {
+        notes = storage.get('notes') || [];
+        note = notes.find(n => n.id === noteId);
+    } else {
+        // Fallback to localStorage
+        notes = JSON.parse(localStorage.getItem('notes') || '[]');
+        note = notes.find(n => n.id == noteId);
+    }
     
     if (!note) return;
     
     // Check permissions
-    if (currentUser.role !== 'admin' && currentUser.username !== note.user) {
+    const noteUser = note.user || note.createdBy;
+    if (currentUser.role !== 'admin' && currentUser.username !== noteUser) {
         alert(translations.no_permission || 'Нет прав для редактирования');
         return;
     }
@@ -1181,33 +1390,63 @@ function editNote(noteId) {
     const newContent = prompt(translations.note_content_prompt || 'Введите текст заметки:', note.content);
     if (newContent === null) return;
     
-    note.title = newTitle;
-    note.content = newContent;
-    note.editedBy = currentUser.username;
-    note.editedAt = new Date().toISOString();
+    const updates = {
+        title: newTitle,
+        content: newContent,
+        editedBy: currentUser.username,
+        editedAt: new Date().toISOString()
+    };
+    
+    // Try to save to new storage system first
+    if (typeof storage !== 'undefined' && storage.isLoaded) {
+        await storage.update('notes', noteId, updates, currentUser.username);
+    } else {
+        // Fallback to localStorage
+        Object.assign(note, updates);
+        localStorage.setItem('notes', JSON.stringify(notes));
+    }
     
     localStorage.setItem('notes', JSON.stringify(notes));
     loadNotes();
     loadDashboardData(); // Update dashboard
 }
 
-function deleteNote(noteId) {
+async function deleteNote(noteId) {
     if (!confirm(translations.confirm_delete_note || 'Удалить заметку?')) return;
     
-    const notes = JSON.parse(localStorage.getItem('notes') || '[]');
-    const noteIndex = notes.findIndex(n => n.id === noteId);
+    let notes, note;
     
-    if (noteIndex === -1) return;
+    // Try to get from new storage system first
+    if (typeof storage !== 'undefined' && storage.isLoaded) {
+        notes = storage.get('notes') || [];
+        note = notes.find(n => n.id === noteId);
+    } else {
+        // Fallback to localStorage
+        notes = JSON.parse(localStorage.getItem('notes') || '[]');
+        note = notes.find(n => n.id == noteId);
+    }
+    
+    if (!note) return;
     
     // Check permissions
-    const note = notes[noteIndex];
-    if (currentUser.role !== 'admin' && currentUser.username !== note.user) {
+    const noteUser = note.user || note.createdBy;
+    if (currentUser.role !== 'admin' && currentUser.username !== noteUser) {
         alert(translations.no_permission || 'Нет прав для удаления');
         return;
     }
     
-    notes.splice(noteIndex, 1);
-    localStorage.setItem('notes', JSON.stringify(notes));
+    // Try to delete from new storage system first
+    if (typeof storage !== 'undefined' && storage.isLoaded) {
+        await storage.delete('notes', noteId, currentUser.username);
+    } else {
+        // Fallback to localStorage
+        const noteIndex = notes.findIndex(n => n.id == noteId);
+        if (noteIndex !== -1) {
+            notes.splice(noteIndex, 1);
+            localStorage.setItem('notes', JSON.stringify(notes));
+        }
+    }
+    
     loadNotes();
     loadDashboardData(); // Update dashboard
 }
@@ -1555,6 +1794,13 @@ document.addEventListener('DOMContentLoaded', function() {
     loadNotes();
     loadDashboardData();
     
+    // Initialize animations
+    setTimeout(() => {
+        addPageAnimations();
+        initializeTooltips();
+        initializeInteractiveAnimations();
+    }, 100);
+    
     // Set up tab event listeners
     const tabs = document.querySelectorAll('[data-bs-toggle="tab"]');
     tabs.forEach(tab => {
@@ -1699,3 +1945,821 @@ function handleFileImport(event) {
     // Reset file input
     event.target.value = '';
 }
+
+// Animation Functions
+function addPageAnimations() {
+    // Add fade-in animation to main content
+    const mainContent = document.querySelector('.container-fluid');
+    if (mainContent) {
+        mainContent.classList.add('animate-fade-in');
+    }
+    
+    // Add animations to cards with delays
+    const cards = document.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+        card.classList.add('card-animated', 'animate-fade-in');
+        card.style.animationDelay = `${index * 0.1}s`;
+    });
+    
+    // Add hover animations to buttons
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(btn => {
+        if (!btn.classList.contains('btn-animated')) {
+            btn.classList.add('btn-animated');
+        }
+    });
+    
+    // Add animations to badges
+    const badges = document.querySelectorAll('.badge');
+    badges.forEach(badge => {
+        badge.classList.add('hover-scale');
+    });
+}
+
+function initializeTooltips() {
+    // Initialize Bootstrap tooltips if available
+    if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+        const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltips.forEach(tooltip => {
+            new bootstrap.Tooltip(tooltip);
+        });
+    }
+}
+
+function initializeInteractiveAnimations() {
+    // Add animations to company arrival badges
+    const companyBadges = document.querySelectorAll('.company-arrival');
+    companyBadges.forEach(badge => {
+        badge.addEventListener('click', function() {
+            this.classList.add('animate-bounce');
+            setTimeout(() => {
+                this.classList.remove('animate-bounce');
+            }, 1000);
+        });
+    });
+    
+    // Add animations to form inputs
+    const formInputs = document.querySelectorAll('.form-control, .form-select');
+    formInputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.classList.add('animate-pulse');
+        });
+        
+        input.addEventListener('blur', function() {
+            this.classList.remove('animate-pulse');
+        });
+    });
+    
+    // Add animations to tab switching
+    const tabLinks = document.querySelectorAll('.nav-tabs .nav-link');
+    tabLinks.forEach(tab => {
+        tab.addEventListener('click', function() {
+            // Add animation to tab content
+            setTimeout(() => {
+                const activeTabContent = document.querySelector('.tab-pane.active');
+                if (activeTabContent) {
+                    activeTabContent.classList.add('animate-fade-in');
+                    setTimeout(() => {
+                        activeTabContent.classList.remove('animate-fade-in');
+                    }, 600);
+                }
+            }, 50);
+        });
+    });
+}
+
+function animateElement(element, animationClass, duration = 600) {
+    if (!element) return;
+    
+    element.classList.add(animationClass);
+    setTimeout(() => {
+        element.classList.remove(animationClass);
+    }, duration);
+}
+
+function showSuccessAnimation(element) {
+    if (element) {
+        animateElement(element, 'success-animation', 1000);
+    }
+}
+
+function showErrorAnimation(element) {
+    if (element) {
+        animateElement(element, 'error-animation', 600);
+    }
+}
+
+function animateCounter(element, startValue, endValue, duration = 1000) {
+    if (!element) return;
+    
+    const startTime = performance.now();
+    const startNum = parseInt(startValue) || 0;
+    const endNum = parseInt(endValue) || 0;
+    const diff = endNum - startNum;
+    
+    function updateCounter(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function for smooth animation
+        const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+        const currentValue = Math.round(startNum + (diff * easeOutQuart));
+        
+        element.textContent = currentValue;
+        
+        if (progress < 1) {
+            requestAnimationFrame(updateCounter);
+        }
+    }
+    
+    requestAnimationFrame(updateCounter);
+}
+
+function slideInElement(element, direction = 'up') {
+    if (!element) return;
+    
+    const animationClass = direction === 'up' ? 'animate-slide-up' : 
+                          direction === 'left' ? 'animate-fade-in-left' : 
+                          'animate-fade-in-right';
+    
+    element.classList.add(animationClass);
+}
+
+function addLoadingAnimation(button) {
+    if (!button) return;
+    
+    const originalContent = button.innerHTML;
+    const spinner = '<span class="loading-spinner me-2"></span>';
+    
+    button.innerHTML = spinner + button.textContent;
+    button.disabled = true;
+    
+    return function removeLoading() {
+        button.innerHTML = originalContent;
+        button.disabled = false;
+    };
+}
+
+function animateProgressBar(progressBar, targetWidth, duration = 1000) {
+    if (!progressBar) return;
+    
+    progressBar.style.width = '0%';
+    progressBar.style.transition = `width ${duration}ms ease-out`;
+    
+    setTimeout(() => {
+        progressBar.style.width = targetWidth + '%';
+    }, 50);
+}
+
+function createFloatingNotification(message, type = 'info', duration = 3000) {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} position-fixed`;
+    notification.style.cssText = `
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        min-width: 300px;
+        animation: slideInRight 0.5s ease-out;
+    `;
+    notification.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="bi bi-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+            <span>${message}</span>
+            <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after duration
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.style.animation = 'fadeOut 0.5s ease-out';
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.remove();
+                }
+            }, 500);
+        }
+    }, duration);
+    
+    return notification;
+}
+
+// Add CSS for slideInRight animation
+const additionalStyles = `
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+`;
+
+// Inject additional styles
+const styleSheet = document.createElement('style');
+styleSheet.textContent = additionalStyles;
+document.head.appendChild(styleSheet);
+
+// Gallery Functions
+let currentGalleryFilter = 'all';
+let currentGallerySort = 'newest';
+let selectedPhotoId = null;
+
+function initGallery() {
+    loadGalleryData();
+    loadCompaniesForGalleryFilter();
+    setupGalleryEventListeners();
+}
+
+function setupGalleryEventListeners() {
+    // Photo category change handler
+    const categorySelect = document.getElementById('photo-category');
+    if (categorySelect) {
+        categorySelect.addEventListener('change', function() {
+            const companyContainer = document.getElementById('company-select-container');
+            if (this.value === 'company') {
+                companyContainer.style.display = 'block';
+            } else {
+                companyContainer.style.display = 'none';
+            }
+        });
+    }
+
+    // Photo files change handler
+    const photoFiles = document.getElementById('photo-files');
+    if (photoFiles) {
+        photoFiles.addEventListener('change', previewPhotos);
+    }
+}
+
+async function loadCompaniesForGalleryFilter() {
+    try {
+        const response = await fetch('data/schedule.json');
+        const data = await response.json();
+        
+        const companySelects = [
+            document.getElementById('photo-company'),
+            document.getElementById('gallery-company-filter')
+        ];
+        
+        companySelects.forEach(select => {
+            if (!select) return;
+            
+            // Get unique companies
+            const companies = new Set();
+            data.schedule.forEach(day => {
+                day.companies.forEach(company => companies.add(company));
+            });
+            
+            // Clear existing options except first
+            const firstOption = select.querySelector('option[value=""]');
+            select.innerHTML = '';
+            if (firstOption) select.appendChild(firstOption);
+            
+            // Add company options
+            Array.from(companies).sort().forEach(company => {
+                const option = document.createElement('option');
+                option.value = company;
+                option.textContent = company;
+                select.appendChild(option);
+            });
+        });
+    } catch (error) {
+        console.error('Error loading companies for gallery:', error);
+    }
+}
+
+function showUploadModal() {
+    const modal = new bootstrap.Modal(document.getElementById('uploadPhotoModal'));
+    modal.show();
+}
+
+function previewPhotos() {
+    const fileInput = document.getElementById('photo-files');
+    const previewContainer = document.getElementById('preview-container');
+    const photoPreview = document.getElementById('photo-preview');
+    const uploadBtn = document.getElementById('upload-btn');
+    
+    if (!fileInput.files.length) {
+        photoPreview.style.display = 'none';
+        uploadBtn.disabled = true;
+        return;
+    }
+    
+    previewContainer.innerHTML = '';
+    photoPreview.style.display = 'block';
+    uploadBtn.disabled = false;
+    
+    Array.from(fileInput.files).forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewItem = document.createElement('div');
+            previewItem.className = 'photo-preview-item';
+            previewItem.innerHTML = `
+                <img src="${e.target.result}" alt="Preview">
+                <button type="button" class="photo-preview-remove" onclick="removePreviewPhoto(${index})">×</button>
+            `;
+            previewContainer.appendChild(previewItem);
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+function removePreviewPhoto(index) {
+    const fileInput = document.getElementById('photo-files');
+    const dt = new DataTransfer();
+    
+    Array.from(fileInput.files).forEach((file, i) => {
+        if (i !== index) {
+            dt.items.add(file);
+        }
+    });
+    
+    fileInput.files = dt.files;
+    previewPhotos();
+}
+
+async function uploadPhotos() {
+    const fileInput = document.getElementById('photo-files');
+    const category = document.getElementById('photo-category').value;
+    const company = document.getElementById('photo-company').value;
+    const title = document.getElementById('photo-title').value;
+    const description = document.getElementById('photo-description').value;
+    const tags = document.getElementById('photo-tags').value;
+    
+    if (!fileInput.files.length || !category) {
+        alert(translations.form_required_fields || 'Заполните все обязательные поля');
+        return;
+    }
+    
+    if (category === 'company' && !company) {
+        alert('Выберите компанию для категории "Компания"');
+        return;
+    }
+    
+    const uploadBtn = document.getElementById('upload-btn');
+    const removeLoading = addLoadingAnimation(uploadBtn);
+    
+    try {
+        const photos = [];
+        
+        for (let i = 0; i < fileInput.files.length; i++) {
+            const file = fileInput.files[i];
+            const photoData = await processPhotoFile(file, {
+                category,
+                company: category === 'company' ? company : null,
+                title: title || file.name,
+                description,
+                tags: tags.split(',').map(tag => tag.trim()).filter(tag => tag)
+            });
+            photos.push(photoData);
+        }
+        
+        // Save to new storage system first
+        if (typeof storage !== 'undefined' && storage.isLoaded) {
+            // Add photos one by one to maintain proper IDs and timestamps
+            for (const photo of photos) {
+                await storage.add('gallery', photo, currentUser.username);
+            }
+            
+            // Update gallery stats
+            const currentGallery = storage.get('gallery') || [];
+            const totalSize = currentGallery.reduce((sum, photo) => sum + (photo.size || 0), 0);
+            storage.data.gallery.totalPhotos = currentGallery.length;
+            storage.data.gallery.totalSize = totalSize;
+        } else {
+            // Fallback to localStorage
+            const galleryData = JSON.parse(localStorage.getItem('gallery') || '[]');
+            galleryData.push(...photos);
+            localStorage.setItem('gallery', JSON.stringify(galleryData));
+        }
+        
+        // Close modal and refresh gallery
+        bootstrap.Modal.getInstance(document.getElementById('uploadPhotoModal')).hide();
+        document.getElementById('upload-photo-form').reset();
+        document.getElementById('photo-preview').style.display = 'none';
+        
+        createFloatingNotification(
+            `Загружено ${photos.length} фотографий`, 
+            'success'
+        );
+        
+        loadGalleryData();
+        
+    } catch (error) {
+        console.error('Upload error:', error);
+        createFloatingNotification('Ошибка при загрузке фотографий', 'danger');
+    } finally {
+        removeLoading();
+    }
+}
+
+async function processPhotoFile(file, metadata) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Create photo object
+            const photo = {
+                id: Date.now() + Math.random(),
+                filename: file.name,
+                size: file.size,
+                type: file.type,
+                data: e.target.result, // Base64 data URL
+                category: metadata.category,
+                company: metadata.company,
+                title: metadata.title,
+                description: metadata.description,
+                tags: metadata.tags,
+                uploadDate: new Date().toISOString(),
+                user: currentUser.username
+            };
+            resolve(photo);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function loadGalleryData() {
+    let galleryData = [];
+    
+    // Try to load from new storage system first
+    if (typeof storage !== 'undefined' && storage.isLoaded) {
+        galleryData = storage.get('gallery') || [];
+    } else {
+        // Fallback to localStorage
+        galleryData = JSON.parse(localStorage.getItem('gallery') || '[]');
+    }
+    
+    const container = document.getElementById('gallery-container');
+    const emptyState = document.getElementById('gallery-empty');
+    
+    if (!container) return;
+    
+    if (galleryData.length === 0) {
+        container.style.display = 'none';
+        emptyState.style.display = 'block';
+        return;
+    }
+    
+    container.style.display = 'block';
+    emptyState.style.display = 'none';
+    
+    // Filter and sort data
+    let filteredData = filterGalleryData(galleryData);
+    filteredData = sortGalleryData(filteredData);
+    
+    // Render gallery items
+    container.innerHTML = filteredData.map(photo => createGalleryItem(photo)).join('');
+    
+    // Add animations
+    setTimeout(() => {
+        const items = container.querySelectorAll('.gallery-item');
+        items.forEach((item, index) => {
+            item.classList.add('animate-fade-in');
+            item.style.animationDelay = `${index * 0.05}s`;
+        });
+    }, 50);
+}
+
+function createGalleryItem(photo) {
+    const categoryClass = `gallery-category-${photo.category}`;
+    const canEdit = currentUser.role === 'admin' || currentUser.username === photo.user;
+    
+    return `
+        <div class="col-md-3 col-sm-6 mb-4">
+            <div class="gallery-item card-animated" data-photo-id="${photo.id}" onclick="showPhotoModal('${photo.id}')">
+                <img src="${photo.data}" alt="${photo.title}" class="gallery-item-image">
+                <div class="gallery-item-category ${categoryClass}">
+                    ${getCategoryName(photo.category)}
+                </div>
+                ${canEdit ? `
+                <div class="gallery-item-actions">
+                    <button class="btn btn-sm btn-outline-light" onclick="event.stopPropagation(); editPhoto('${photo.id}')" title="Редактировать">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deletePhoto('${photo.id}')" title="Удалить">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                ` : ''}
+                <div class="gallery-item-overlay">
+                    <div class="gallery-item-title">${photo.title}</div>
+                    <div class="gallery-item-info">
+                        ${photo.company ? photo.company + ' • ' : ''}
+                        ${new Date(photo.uploadDate).toLocaleDateString()}
+                        ${photo.tags.length > 0 ? `
+                        <div class="gallery-tags">
+                            ${photo.tags.map(tag => `<span class="gallery-tag">${tag}</span>`).join('')}
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function getCategoryName(category) {
+    const names = {
+        'company': 'Компания',
+        'instructions': 'Инструкции',
+        'other': 'Прочее'
+    };
+    return names[category] || category;
+}
+
+function filterGalleryData(data) {
+    let filtered = data;
+    
+    // Filter by category
+    if (currentGalleryFilter !== 'all') {
+        filtered = filtered.filter(photo => photo.category === currentGalleryFilter);
+    }
+    
+    // Filter by company
+    const companyFilter = document.getElementById('gallery-company-filter');
+    if (companyFilter && companyFilter.value) {
+        filtered = filtered.filter(photo => photo.company === companyFilter.value);
+    }
+    
+    // Filter by search
+    const searchInput = document.getElementById('gallery-search');
+    if (searchInput && searchInput.value.trim()) {
+        const searchTerm = searchInput.value.toLowerCase();
+        filtered = filtered.filter(photo => 
+            photo.title.toLowerCase().includes(searchTerm) ||
+            photo.description.toLowerCase().includes(searchTerm) ||
+            photo.tags.some(tag => tag.toLowerCase().includes(searchTerm)) ||
+            (photo.company && photo.company.toLowerCase().includes(searchTerm))
+        );
+    }
+    
+    return filtered;
+}
+
+function sortGalleryData(data) {
+    const sortBy = currentGallerySort;
+    
+    switch (sortBy) {
+        case 'newest':
+            return data.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
+        case 'oldest':
+            return data.sort((a, b) => new Date(a.uploadDate) - new Date(b.uploadDate));
+        case 'name':
+            return data.sort((a, b) => a.title.localeCompare(b.title));
+        default:
+            return data;
+    }
+}
+
+function filterGallery(category) {
+    currentGalleryFilter = category;
+    
+    // Update filter buttons
+    document.querySelectorAll('.btn-group button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    loadGalleryData();
+}
+
+function filterByCompany() {
+    loadGalleryData();
+}
+
+function searchGallery() {
+    // Debounce search
+    clearTimeout(window.gallerySearchTimeout);
+    window.gallerySearchTimeout = setTimeout(() => {
+        loadGalleryData();
+    }, 300);
+}
+
+function sortGallery() {
+    const sortSelect = document.getElementById('gallery-sort');
+    currentGallerySort = sortSelect.value;
+    loadGalleryData();
+}
+
+function showPhotoModal(photoId) {
+    const galleryData = JSON.parse(localStorage.getItem('gallery') || '[]');
+    const photo = galleryData.find(p => p.id == photoId);
+    
+    if (!photo) return;
+    
+    selectedPhotoId = photoId;
+    
+    const modal = document.getElementById('photoViewModal');
+    const image = document.getElementById('photo-view-image');
+    const title = document.getElementById('photo-view-title');
+    const info = document.getElementById('photo-view-info');
+    const editBtn = document.getElementById('edit-photo-btn');
+    const deleteBtn = document.getElementById('delete-photo-btn');
+    
+    image.src = photo.data;
+    image.alt = photo.title;
+    title.textContent = photo.title;
+    
+    info.innerHTML = `
+        <div class="photo-info-grid">
+            <span class="photo-info-label">Категория:</span>
+            <span>${getCategoryName(photo.category)}</span>
+            ${photo.company ? `
+            <span class="photo-info-label">Компания:</span>
+            <span>${photo.company}</span>
+            ` : ''}
+            <span class="photo-info-label">Дата загрузки:</span>
+            <span>${new Date(photo.uploadDate).toLocaleDateString()}</span>
+            <span class="photo-info-label">Загрузил:</span>
+            <span>${photo.user}</span>
+            <span class="photo-info-label">Размер файла:</span>
+            <span>${formatFileSize(photo.size)}</span>
+            ${photo.description ? `
+            <span class="photo-info-label">Описание:</span>
+            <span>${photo.description}</span>
+            ` : ''}
+            ${photo.tags.length > 0 ? `
+            <span class="photo-info-label">Теги:</span>
+            <div class="gallery-tags">
+                ${photo.tags.map(tag => `<span class="gallery-tag">${tag}</span>`).join('')}
+            </div>
+            ` : ''}
+        </div>
+    `;
+    
+    // Show/hide action buttons based on permissions
+    const canEdit = currentUser.role === 'admin' || currentUser.username === photo.user;
+    editBtn.style.display = canEdit ? 'block' : 'none';
+    deleteBtn.style.display = canEdit ? 'block' : 'none';
+    
+    new bootstrap.Modal(modal).show();
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+function downloadPhoto() {
+    if (!selectedPhotoId) return;
+    
+    const galleryData = JSON.parse(localStorage.getItem('gallery') || '[]');
+    const photo = galleryData.find(p => p.id == selectedPhotoId);
+    
+    if (!photo) return;
+    
+    const link = document.createElement('a');
+    link.href = photo.data;
+    link.download = photo.filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function editPhoto(photoId = null) {
+    const id = photoId || selectedPhotoId;
+    if (!id) return;
+    
+    const galleryData = JSON.parse(localStorage.getItem('gallery') || '[]');
+    const photo = galleryData.find(p => p.id == id);
+    
+    if (!photo) return;
+    
+    // Check permissions
+    if (currentUser.role !== 'admin' && currentUser.username !== photo.user) {
+        alert('Нет прав для редактирования');
+        return;
+    }
+    
+    // Simple edit implementation - you can expand this
+    const newTitle = prompt('Новое название:', photo.title);
+    if (newTitle === null) return;
+    
+    const newDescription = prompt('Новое описание:', photo.description || '');
+    if (newDescription === null) return;
+    
+    const newTags = prompt('Новые теги (через запятую):', photo.tags.join(', '));
+    if (newTags === null) return;
+    
+    // Update photo
+    photo.title = newTitle;
+    photo.description = newDescription;
+    photo.tags = newTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+    photo.editedBy = currentUser.username;
+    photo.editedAt = new Date().toISOString();
+    
+    // Save changes
+    localStorage.setItem('gallery', JSON.stringify(galleryData));
+    
+    createFloatingNotification('Фотография обновлена', 'success');
+    
+    // Refresh displays
+    loadGalleryData();
+    if (selectedPhotoId) {
+        showPhotoModal(selectedPhotoId);
+    }
+}
+
+function deletePhoto(photoId = null) {
+    const id = photoId || selectedPhotoId;
+    if (!id) return;
+    
+    const galleryData = JSON.parse(localStorage.getItem('gallery') || '[]');
+    const photo = galleryData.find(p => p.id == id);
+    
+    if (!photo) return;
+    
+    // Check permissions
+    if (currentUser.role !== 'admin' && currentUser.username !== photo.user) {
+        alert('Нет прав для удаления');
+        return;
+    }
+    
+    if (!confirm('Удалить эту фотографию?')) return;
+    
+    // Remove photo
+    const updatedData = galleryData.filter(p => p.id != id);
+    localStorage.setItem('gallery', JSON.stringify(updatedData));
+    
+    createFloatingNotification('Фотография удалена', 'success');
+    
+    // Close modal if open and refresh gallery
+    if (selectedPhotoId) {
+        bootstrap.Modal.getInstance(document.getElementById('photoViewModal')).hide();
+        selectedPhotoId = null;
+    }
+    
+    loadGalleryData();
+}
+
+// Storage management functions
+function getStorageUsage() {
+    const galleryData = JSON.parse(localStorage.getItem('gallery') || '[]');
+    let totalSize = 0;
+    
+    galleryData.forEach(photo => {
+        totalSize += photo.size || 0;
+    });
+    
+    return {
+        photos: galleryData.length,
+        totalSize: totalSize,
+        formattedSize: formatFileSize(totalSize)
+    };
+}
+
+function checkStorageQuota() {
+    if (navigator.storage && navigator.storage.estimate) {
+        navigator.storage.estimate().then(estimate => {
+            const usage = getStorageUsage();
+            const quotaUsed = (estimate.usage / estimate.quota) * 100;
+            
+            if (quotaUsed > 80) {
+                showStorageWarning(quotaUsed, usage);
+            }
+        });
+    }
+}
+
+function showStorageWarning(quotaUsed, usage) {
+    const warning = document.createElement('div');
+    warning.className = 'storage-status warning';
+    warning.innerHTML = `
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        Внимание: Использовано ${quotaUsed.toFixed(1)}% хранилища
+        <br>Фотографий: ${usage.photos}, Размер: ${usage.formattedSize}
+    `;
+    
+    document.body.appendChild(warning);
+    
+    setTimeout(() => {
+        warning.remove();
+    }, 5000);
+}
+
+// Initialize gallery when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('gallery-container')) {
+        initGallery();
+        checkStorageQuota();
+    }
+});

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест изображений</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin-bottom: 30px; border: 1px solid #ddd; padding: 15px; }
+        .test-image { max-width: 200px; margin: 10px; border: 1px solid #ccc; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Тест загрузки фотоинструкций</h1>
+    
+    <div class="test-section">
+        <h2>Coca-Cola (JPG файлы)</h2>
+        <img src="img/instructions/brands/coca-cola/packing-example-1.jpg" alt="Coca-Cola 1" class="test-image" onload="showSuccess(this)" onerror="showError(this)">
+        <img src="img/instructions/brands/coca-cola/packing-example-2.jpg" alt="Coca-Cola 2" class="test-image" onload="showSuccess(this)" onerror="showError(this)">
+        <img src="img/instructions/brands/coca-cola/wooden-base-1-4.jpg" alt="Wooden Base" class="test-image" onload="showSuccess(this)" onerror="showError(this)">
+    </div>
+    
+    <div class="test-section">
+        <h2>A. Le Coq (HEIC файлы)</h2>
+        <img src="img/instructions/brands/a-le-coq/packing-example-1.heic" alt="A. Le Coq 1" class="test-image" onload="showSuccess(this)" onerror="showError(this)">
+        <img src="img/instructions/brands/a-le-coq/packing-example-2.heic" alt="A. Le Coq 2" class="test-image" onload="showSuccess(this)" onerror="showError(this)">
+        <img src="img/instructions/brands/a-le-coq/packing-example-3.heic" alt="A. Le Coq 3" class="test-image" onload="showSuccess(this)" onerror="showError(this)">
+    </div>
+    
+    <div class="test-section">
+        <h2>Общие инструкции (SVG файлы)</h2>
+        <img src="img/instructions/pallet-example.svg" alt="Pallet Example" class="test-image" onload="showSuccess(this)" onerror="showError(this)">
+        <img src="img/instructions/drink-stands.svg" alt="Drink Stands" class="test-image" onload="showSuccess(this)" onerror="showError(this)">
+    </div>
+    
+    <div id="results">
+        <h2>Результаты тестирования:</h2>
+        <div id="success-count">Загружено успешно: 0</div>
+        <div id="error-count">Ошибок загрузки: 0</div>
+    </div>
+
+    <script>
+        let successCount = 0;
+        let errorCount = 0;
+        
+        function showSuccess(img) {
+            successCount++;
+            img.style.border = '3px solid green';
+            img.title = 'Загружено успешно';
+            updateResults();
+        }
+        
+        function showError(img) {
+            errorCount++;
+            img.style.border = '3px solid red';
+            img.title = 'Ошибка загрузки: ' + img.src;
+            img.alt = 'ОШИБКА: ' + img.alt;
+            updateResults();
+        }
+        
+        function updateResults() {
+            document.getElementById('success-count').textContent = 'Загружено успешно: ' + successCount;
+            document.getElementById('error-count').textContent = 'Ошибок загрузки: ' + errorCount;
+        }
+        
+        // Test browser HEIC support
+        function testHEICSupport() {
+            const img = new Image();
+            img.onload = function() {
+                console.log('HEIC поддерживается');
+                document.body.insertAdjacentHTML('afterbegin', '<div style="background: green; color: white; padding: 10px; margin-bottom: 20px;">✅ Браузер поддерживает HEIC</div>');
+            };
+            img.onerror = function() {
+                console.log('HEIC не поддерживается');
+                document.body.insertAdjacentHTML('afterbegin', '<div style="background: orange; color: white; padding: 10px; margin-bottom: 20px;">⚠️ Браузер не поддерживает HEIC файлы</div>');
+            };
+            // Use a simple HEIC test file
+            img.src = 'data:image/heic;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/gAA=';
+        }
+        
+        // Run HEIC support test when page loads
+        window.addEventListener('load', testHEICSupport);
+    </script>
+</body>
+</html>

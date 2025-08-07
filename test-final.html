@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Финальный тест инструкций</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Финальный тест фотоинструкций</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h3>Доступные компании из schedule.json:</h3>
+                <div class="btn-group-vertical d-grid gap-2">
+                    <button class="btn btn-primary" onclick="showInstructions('COCA-COLA')">COCA-COLA</button>
+                    <button class="btn btn-primary" onclick="showInstructions('ALE COQ')">ALE COQ</button>
+                    <button class="btn btn-primary" onclick="showInstructions('KAUPMEES')">KAUPMEES</button>
+                    <button class="btn btn-primary" onclick="showInstructions('MOBEC')">MOBEC</button>
+                    <button class="btn btn-primary" onclick="showInstructions('SMARTEN')">SMARTEN</button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div id="result-container">
+                    <p>Выберите компанию для проверки инструкций</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        function showInstructions(company) {
+            const container = document.getElementById('result-container');
+            container.innerHTML = `<h4>Тестирование инструкций для: ${company}</h4><div id="loading">Загрузка...</div>`;
+            
+            // Simulate the main.js function call
+            try {
+                showPackagingInstructions(company);
+                container.innerHTML += `<div class="alert alert-success">✅ Функция showPackagingInstructions('${company}') выполнена успешно</div>`;
+            } catch (error) {
+                container.innerHTML += `<div class="alert alert-danger">❌ Ошибка: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

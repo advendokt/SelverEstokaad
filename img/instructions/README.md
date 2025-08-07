@@ -1,18 +1,37 @@
 # Папка с фотоинструкциями
 
-Здесь должны размещаться фотографии для инструкций по упаковке и возвратам:
+Здесь размещаются фотографии для инструкций по упаковке и возвратам, организованные по брендам и общим инструкциям.
 
-## Файлы для упаковки:
-- `pallet-example.jpg` - Пример правильно собранной палеты
-- `drink-stands.jpg` - Подставки для напитков
-- `selver-packing.jpg` - Специальная упаковка для Selver
-- `rimi-packing.jpg` - Специальная упаковка для Rimi
+## Общие файлы для упаковки:
+- `pallet-example.svg` - Схема правильно собранной палеты
+- `drink-stands.svg` - Схема размещения подставок для напитков
+- `return-pallet.svg` - Схема оформления возвратной палеты
+- `return-labels.svg` - Схема правильного размещения этикеток
 
-## Файлы для возвратов:
-- `return-pallet.jpg` - Пример оформления возвратной палеты
-- `return-labels.jpg` - Правильное размещение этикеток
-- `damaged-goods.jpg` - Примеры поврежденных товаров
-- `expired-goods.jpg` - Товары с истекшим сроком годности
+## Бренд-специфичные инструкции:
+
+### A. Le Coq (`brands/a-le-coq/`)
+- `packing-example-1.heic` до `packing-example-10.heic` - Примеры упаковки A. Le Coq
+
+### Coca-Cola (`brands/coca-cola/`)
+- `packing-example-1.jpg` до `packing-example-10.jpg` - Примеры упаковки Coca-Cola
+- `wooden-base-1-4.jpg` - Деревянная основа 1-4
+- `wooden-base-additional.jpg` - Дополнительная деревянная основа
+
+### Kaupmees (`brands/kaupmees/`)
+- `packing-example-1.heic` до `packing-example-4.heic` - Примеры упаковки Kaupmees
+
+### Mobec (`brands/mobec/`)
+- `packing-example-1.heic` - Пример упаковки Mobec
+
+### Prike (`brands/prike/`)
+- `packing-example-1.heic` - Пример упаковки Prike
+
+### Saku (`brands/saku/`)
+- `packing-example-1.heic` до `packing-example-9.heic` - Примеры упаковки Saku
+
+### Smarten (`brands/smarten/`)
+- `packing-example-1.heic` до `packing-example-3.heic` - Примеры упаковки Smarten
 
 ## Рекомендации:
 - Размер изображений: 800x600 пикселей или больше

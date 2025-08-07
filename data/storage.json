@@ -1,0 +1,176 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-08-07T00:00:00.000Z",
+  "metadata": {
+    "appName": "Estakaadi Planner",
+    "storageFormat": "centralized",
+    "backupCount": 0
+  },
+  "users": [
+    {
+      "id": "admin_001",
+      "username": "admin",
+      "role": "admin",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "lastLogin": null,
+      "permissions": ["read", "write", "delete", "manage_users"]
+    },
+    {
+      "id": "maksim_001", 
+      "username": "maksim",
+      "role": "admin",
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "lastLogin": null,
+      "permissions": ["read", "write", "delete", "manage_users"]
+    }
+  ],
+  "schedule": {
+    "lastModified": "2025-01-01T00:00:00.000Z",
+    "modifiedBy": "system",
+    "data": [
+      {
+        "day": "monday",
+        "dayName": "Понедельник",
+        "companies": ["A. Le coq", "Coca-Cola", "Saku"]
+      },
+      {
+        "day": "tuesday", 
+        "dayName": "Вторник",
+        "companies": ["Prike", "Mobec"]
+      },
+      {
+        "day": "wednesday",
+        "dayName": "Среда", 
+        "companies": ["Kaupmees", "Smarten"]
+      },
+      {
+        "day": "thursday",
+        "dayName": "Четверг",
+        "companies": ["A. Le coq", "Coca-Cola"]
+      },
+      {
+        "day": "friday",
+        "dayName": "Пятница",
+        "companies": ["Saku", "Prike"]
+      },
+      {
+        "day": "saturday",
+        "dayName": "Суббота",
+        "companies": ["Mobec", "Kaupmees"]
+      },
+      {
+        "day": "sunday",
+        "dayName": "Воскресенье", 
+        "companies": ["Smarten"]
+      }
+    ]
+  },
+  "notes": {
+    "lastModified": "2025-01-01T00:00:00.000Z",
+    "modifiedBy": "system",
+    "data": []
+  },
+  "gallery": {
+    "lastModified": "2025-01-01T00:00:00.000Z",
+    "modifiedBy": "system",
+    "totalPhotos": 0,
+    "totalSize": 0,
+    "data": []
+  },
+  "companies": {
+    "lastModified": "2025-01-01T00:00:00.000Z",
+    "modifiedBy": "system",
+    "data": [
+      {
+        "id": "a_le_coq",
+        "name": "A. Le coq",
+        "displayName": "A. Le coq",
+        "category": "beverages",
+        "active": true,
+        "instructionsPath": "img/instructions/brands/a-le-coq/",
+        "photosPath": "img/A. Le coq/"
+      },
+      {
+        "id": "coca_cola",
+        "name": "Coca-Cola",
+        "displayName": "Coca-Cola", 
+        "category": "beverages",
+        "active": true,
+        "instructionsPath": "img/instructions/brands/coca-cola/",
+        "photosPath": "img/Coca-Cola/"
+      },
+      {
+        "id": "saku",
+        "name": "Saku",
+        "displayName": "Saku",
+        "category": "beverages", 
+        "active": true,
+        "instructionsPath": "img/instructions/brands/saku/",
+        "photosPath": "img/Saku/"
+      },
+      {
+        "id": "prike",
+        "name": "Prike",
+        "displayName": "Prike",
+        "category": "beverages",
+        "active": true,
+        "instructionsPath": "img/instructions/brands/prike/",
+        "photosPath": "img/Prike/"
+      },
+      {
+        "id": "mobec",
+        "name": "Mobec", 
+        "displayName": "Mobec",
+        "category": "beverages",
+        "active": true,
+        "instructionsPath": "img/instructions/brands/mobec/",
+        "photosPath": "img/Mobec/"
+      },
+      {
+        "id": "kaupmees",
+        "name": "Kaupmees",
+        "displayName": "Kaupmees",
+        "category": "retail",
+        "active": true,
+        "instructionsPath": "img/instructions/brands/kaupmees/",
+        "photosPath": "img/Kaupmees/"
+      },
+      {
+        "id": "smarten",
+        "name": "Smarten",
+        "displayName": "Smarten",
+        "category": "retail",
+        "active": true,
+        "instructionsPath": "img/instructions/brands/smarten/",
+        "photosPath": "img/Smarten/"
+      }
+    ]
+  },
+  "settings": {
+    "lastModified": "2025-01-01T00:00:00.000Z",
+    "modifiedBy": "system",
+    "data": {
+      "defaultLanguage": "ru",
+      "availableLanguages": ["ru", "ee"],
+      "theme": "light",
+      "autoBackup": true,
+      "backupInterval": 24,
+      "maxStorageSize": 50,
+      "allowGuestAccess": false,
+      "sessionTimeout": 480
+    }
+  },
+  "logs": {
+    "lastModified": "2025-01-01T00:00:00.000Z",
+    "data": [
+      {
+        "id": "log_001",
+        "timestamp": "2025-01-01T00:00:00.000Z",
+        "user": "system",
+        "action": "system_init",
+        "details": "Storage system initialized",
+        "ipAddress": "127.0.0.1"
+      }
+    ]
+  }
+}
