@@ -162,6 +162,13 @@
                                     <button class="btn btn-outline-info" onclick="showTab('notes')">
                                         <i class="bi bi-journal-text"></i> <span data-translate="add_note">Добавить заметку</span>
                                     </button>
+                                    <hr>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="exportData()">
+                                        <i class="bi bi-download"></i> <span data-translate="export_data">Экспорт данных</span>
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="importData()">
+                                        <i class="bi bi-upload"></i> <span data-translate="import_data">Импорт данных</span>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -647,6 +654,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Hidden file input for data import -->
+    <input type="file" id="import-file-input" accept=".json" style="display: none;" onchange="handleFileImport(event)">
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

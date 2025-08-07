@@ -1,0 +1,104 @@
+{
+  "packagings": [
+    {
+      "id": 1691234567890,
+      "company": "Selver",
+      "items": [
+        {
+          "type": "Целая палета",
+          "typeValue": "whole_pallet",
+          "number": "A-1",
+          "quantity": 2
+        },
+        {
+          "type": "Подставка для напитков", 
+          "typeValue": "drink_stand",
+          "number": "D-1",
+          "quantity": 1
+        }
+      ],
+      "date": "2025-08-07",
+      "notes": "Обратить внимание на срок годности",
+      "user": "admin",
+      "timestamp": "2025-08-07T10:30:00.000Z"
+    },
+    {
+      "id": 1691234567891,
+      "company": "Rimi",
+      "items": [
+        {
+          "type": "Половинка (1/2)",
+          "typeValue": "half_pallet", 
+          "number": "B-2",
+          "quantity": 3
+        }
+      ],
+      "date": "2025-08-07",
+      "notes": "",
+      "user": "user",
+      "timestamp": "2025-08-07T14:15:00.000Z"
+    }
+  ],
+  "returns": [
+    {
+      "id": 1691234567892,
+      "company": "Coop",
+      "item": "Молочные продукты",
+      "quantity": 5,
+      "reason": "Истек срок годности",
+      "date": "2025-08-07",
+      "notes": "Срочно утилизировать",
+      "user": "admin",
+      "timestamp": "2025-08-07T09:45:00.000Z"
+    }
+  ],
+  "notes": [
+    {
+      "id": 1691234567893,
+      "text": "Проверить температуру в холодильнике №2",
+      "user": "admin",
+      "timestamp": "2025-08-07T08:00:00.000Z"
+    },
+    {
+      "id": 1691234567894,
+      "text": "Завтра ожидается большая поставка от Selver",
+      "user": "user", 
+      "timestamp": "2025-08-07T16:30:00.000Z"
+    }
+  ],
+  "schedule": {
+    "monday": ["Selver", "Rimi"],
+    "tuesday": ["Coop", "Grossi Toidukaubad"],
+    "wednesday": ["Selver"],
+    "thursday": ["Rimi", "Coop"],
+    "friday": ["Selver", "Rimi", "Coop"],
+    "saturday": ["Selver"],
+    "sunday": []
+  },
+  "calendarEvents": [
+    {
+      "id": 1691234567895,
+      "date": "2025-08-08",
+      "company": "Selver",
+      "time": "09:00",
+      "type": "delivery"
+    },
+    {
+      "id": 1691234567896,
+      "date": "2025-08-08", 
+      "company": "Rimi",
+      "time": "14:00",
+      "type": "delivery"
+    }
+  ],
+  "arrivals": [
+    {
+      "id": 1691234567897,
+      "company": "Selver",
+      "date": "2025-08-07",
+      "scheduledTime": "09:00",
+      "actualTime": "09:15",
+      "status": "arrived"
+    }
+  ]
+}

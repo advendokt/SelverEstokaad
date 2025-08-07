@@ -105,5 +105,11 @@
   "update": "Обновить",
   "packaging_updated": "Упаковка обновлена",
   "confirm_delete_packaging": "Удалить эту запись упаковки?",
-  "packaging_deleted": "Запись упаковки удалена"
+  "packaging_deleted": "Запись упаковки удалена",
+  "export_data": "Экспорт данных",
+  "import_data": "Импорт данных",
+  "data_exported": "Данные экспортированы",
+  "confirm_import": "Импортировать данные? Текущие данные будут заменены.",
+  "data_imported": "Данные импортированы",
+  "import_error": "Ошибка при импорте данных"
 }

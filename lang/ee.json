@@ -213,5 +213,9 @@
   "update": "Uuenda",
   "packaging_updated": "Pakendamine uuendatud",
   "confirm_delete_packaging": "Kustutada see pakendamise kirje?",
-  "packaging_deleted": "Pakendamise kirje kustutatud"
+  "packaging_deleted": "Pakendamise kirje kustutatud",
+  "export_data": "Ekspordi andmed",
+  "import_data": "Impordi andmed",
+  "data_exported": "Andmed eksporditud",
+  "confirm_import": "Importida andmed? Praegused andmed asendatakse."
 }

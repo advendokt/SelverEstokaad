@@ -1629,3 +1629,72 @@ function updatePackagingStats() {
         notesCountElement.textContent = notes.length;
     }
 }
+
+// Data export/import functions
+function exportData() {
+    const data = {
+        packagings: JSON.parse(localStorage.getItem('packagings') || '[]'),
+        returns: JSON.parse(localStorage.getItem('returns') || '[]'),
+        notes: JSON.parse(localStorage.getItem('notes') || '[]'),
+        schedule: JSON.parse(localStorage.getItem('schedule') || '{}'),
+        calendarEvents: JSON.parse(localStorage.getItem('calendarEvents') || '[]'),
+        arrivals: JSON.parse(localStorage.getItem('arrivals') || '[]'),
+        exportDate: new Date().toISOString(),
+        version: '1.0'
+    };
+    
+    const dataStr = JSON.stringify(data, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `estakaadi-planner-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    alert(translations.data_exported || 'Данные экспортированы');
+}
+
+function importData() {
+    document.getElementById('import-file-input').click();
+}
+
+function handleFileImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            if (confirm(translations.confirm_import || 'Импортировать данные? Текущие данные будут заменены.')) {
+                // Import all data
+                if (data.packagings) localStorage.setItem('packagings', JSON.stringify(data.packagings));
+                if (data.returns) localStorage.setItem('returns', JSON.stringify(data.returns));
+                if (data.notes) localStorage.setItem('notes', JSON.stringify(data.notes));
+                if (data.schedule) localStorage.setItem('schedule', JSON.stringify(data.schedule));
+                if (data.calendarEvents) localStorage.setItem('calendarEvents', JSON.stringify(data.calendarEvents));
+                if (data.arrivals) localStorage.setItem('arrivals', JSON.stringify(data.arrivals));
+                
+                alert(translations.data_imported || 'Данные импортированы');
+                
+                // Reload current view
+                loadDashboardData();
+                loadPackagingData();
+                loadNotes();
+                loadSchedule();
+            }
+        } catch (error) {
+            alert(translations.import_error || 'Ошибка при импорте данных');
+            console.error('Import error:', error);
+        }
+    };
+    reader.readAsText(file);
+    
+    // Reset file input
+    event.target.value = '';
+}
