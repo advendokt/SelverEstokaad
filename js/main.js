@@ -12,6 +12,7 @@ const users = [
     { username: "maksim", password: "123", role: "admin", name: "Максим" },
     { username: "admin", password: "321", role: "admin", name: "Администратор" },
     { username: "boss", password: "321", role: "admin", name: "Начальник" },
+    { username: "dima", password: "456", role: "admin", name: "Дима" },
     { username: "worker1", password: "111", role: "user", name: "Сотрудник 1" },
     { username: "worker2", password: "222", role: "user", name: "Сотрудник 2" }
 ];
