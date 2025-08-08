@@ -9,8 +9,8 @@ let selectedEventId = null;
 
 // Storage adapter functions
 async function getUsers() {
-    if (typeof storage !== 'undefined' && storage.isLoaded) {
-        return storage.get('users') || [];
+    if (typeof dbAPI !== 'undefined' && dbAPI.isReady) {
+        return await dbAPI.getUsers();
     }
     // Fallback to hardcoded users
     return [
@@ -24,12 +24,8 @@ async function getUsers() {
 }
 
 async function saveUser(userData) {
-    if (typeof storage !== 'undefined' && storage.isLoaded) {
-        if (userData.id) {
-            return await storage.update('users', userData.id, userData, currentUser?.username || 'system');
-        } else {
-            return await storage.add('users', userData, currentUser?.username || 'system');
-        }
+    if (typeof dbAPI !== 'undefined' && dbAPI.isReady) {
+        return await dbAPI.saveUser(userData);
     }
     return false;
 }
@@ -47,8 +43,8 @@ async function login(username, password, remember = false) {
         storageType.setItem('currentUser', JSON.stringify(user));
         
         // Log login activity
-        if (typeof storage !== 'undefined' && storage.isLoaded) {
-            storage.addLog('user_login', `User ${username} logged in`, username);
+        if (typeof dbAPI !== 'undefined' && dbAPI.isReady) {
+            await dbAPI.addLog('user_login', `User ${username} logged in`, username);
         }
         
         return true;
@@ -58,8 +54,8 @@ async function login(username, password, remember = false) {
 }
 
 function logout() {
-    if (typeof storage !== 'undefined' && storage.isLoaded && currentUser) {
-        storage.addLog('user_logout', `User ${currentUser.username} logged out`, currentUser.username);
+    if (typeof dbAPI !== 'undefined' && dbAPI.isReady && currentUser) {
+        dbAPI.addLog('user_logout', `User ${currentUser.username} logged out`, currentUser.username);
     }
     
     currentUser = null;
@@ -174,13 +170,20 @@ async function loadSchedule() {
     try {
         let scheduleData;
         
-        // Try to load from new storage system
-        if (typeof storage !== 'undefined' && storage.isLoaded) {
-            scheduleData = storage.get('schedule');
+        // Try to load from new database system
+        if (typeof dbAPI !== 'undefined' && dbAPI.isReady) {
+            scheduleData = await dbAPI.getSchedule();
+        }
+        
+        // Fallback to old storage system
+        if (!scheduleData || scheduleData.length === 0) {
+            if (typeof storage !== 'undefined' && storage.isLoaded) {
+                scheduleData = storage.get('schedule');
+            }
         }
         
         // Fallback to old JSON file
-        if (!scheduleData) {
+        if (!scheduleData || scheduleData.length === 0) {
             const response = await fetch('data/schedule.json');
             const jsonData = await response.json();
             scheduleData = jsonData.schedule || jsonData;
@@ -1293,8 +1296,11 @@ async function loadNotes() {
     
     let notes = [];
     
-    // Try to load from new storage system
-    if (typeof storage !== 'undefined' && storage.isLoaded) {
+    // Try to load from new database system
+    if (typeof dbAPI !== 'undefined' && dbAPI.isReady) {
+        notes = await dbAPI.getNotes();
+    } else if (typeof storage !== 'undefined' && storage.isLoaded) {
+        // Fallback to old storage system
         notes = storage.get('notes') || [];
     } else {
         // Fallback to localStorage
@@ -1346,8 +1352,11 @@ async function addNote() {
         user: currentUser.username // Keep for compatibility
     };
     
-    // Try to save to new storage system first
-    if (typeof storage !== 'undefined' && storage.isLoaded) {
+    // Try to save to new database system first
+    if (typeof dbAPI !== 'undefined' && dbAPI.isReady) {
+        await dbAPI.saveNote(note, currentUser.username);
+    } else if (typeof storage !== 'undefined' && storage.isLoaded) {
+        // Fallback to old storage system
         await storage.add('notes', note, currentUser.username);
     } else {
         // Fallback to localStorage

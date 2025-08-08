@@ -4,75 +4,72 @@
 
 // Storage administration functions
 function updateStorageStats() {
-    if (typeof storage === 'undefined' || !storage.isLoaded) {
-        console.warn('Storage system not available');
+    if (typeof dbAPI === 'undefined' || !dbAPI.isReady) {
+        console.warn('Database system not available');
         return;
     }
 
-    const stats = storage.getStorageStats();
-    
-    // Update storage info display
-    const storageInfo = document.getElementById('storage-info');
-    if (storageInfo) {
-        storageInfo.innerHTML = `
-            <div class="row">
-                <div class="col-md-4">
-                    <div class="card bg-info text-white">
-                        <div class="card-body">
-                            <h6 class="card-title">Общий размер</h6>
-                            <h4>${stats.formattedSize}</h4>
+    dbAPI.getStorageStats().then(stats => {
+        // Update storage info display
+        const storageInfo = document.getElementById('storage-info');
+        if (storageInfo && stats) {
+            storageInfo.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card bg-info text-white">
+                            <div class="card-body">
+                                <h6 class="card-title">База данных</h6>
+                                <h4>IndexedDB</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <h6 class="card-title">Последнее обновление</h6>
+                                <p>${new Date(stats.lastUpdated).toLocaleString()}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-warning text-white">
+                            <div class="card-body">
+                                <h6 class="card-title">Версия</h6>
+                                <h4>${stats.version}</h4>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <div class="card bg-success text-white">
-                        <div class="card-body">
-                            <h6 class="card-title">Последнее обновление</h6>
-                            <p>${new Date(stats.lastUpdated).toLocaleString()}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card bg-warning text-white">
-                        <div class="card-body">
-                            <h6 class="card-title">Версия</h6>
-                            <h4>${stats.version}</h4>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-3">
-                <h6>Статистика по разделам:</h6>
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>Раздел</th>
-                                <th>Элементов</th>
-                                <th>Размер</th>
-                                <th>Доля</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${stats.sections.map(section => `
+                <div class="mt-3">
+                    <h6>Статистика по разделам:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
                                 <tr>
-                                    <td><strong>${getSectionDisplayName(section.name)}</strong></td>
-                                    <td>${section.itemCount}</td>
-                                    <td>${section.formattedSize}</td>
-                                    <td>
-                                        <div class="progress" style="height: 6px;">
-                                            <div class="progress-bar" style="width: ${(section.size / stats.totalSize * 100).toFixed(1)}%"></div>
-                                        </div>
-                                        ${(section.size / stats.totalSize * 100).toFixed(1)}%
-                                    </td>
+                                    <th>Раздел</th>
+                                    <th>Элементов</th>
+                                    <th>Статус</th>
                                 </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                ${stats.sections.map(section => `
+                                    <tr>
+                                        <td><strong>${getSectionDisplayName(section.name)}</strong></td>
+                                        <td>${section.itemCount}</td>
+                                        <td>
+                                            <span class="badge bg-success">Готов</span>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-        `;
-    }
+            `;
+        }
+    }).catch(error => {
+        console.error('Error getting storage stats:', error);
+    });
 }
 
 function getSectionDisplayName(sectionName) {
@@ -91,11 +88,11 @@ function getSectionDisplayName(sectionName) {
 
 async function exportAllData() {
     try {
-        if (typeof storage === 'undefined' || !storage.isLoaded) {
-            throw new Error('Storage system not available');
+        if (typeof dbAPI === 'undefined' || !dbAPI.isReady) {
+            throw new Error('Database system not available');
         }
 
-        const exportData = storage.exportData();
+        const exportData = await dbAPI.exportData();
         const dataStr = JSON.stringify(exportData, null, 2);
         
         // Create downloadable file
@@ -137,7 +134,7 @@ async function importData() {
                         return;
                     }
                     
-                    const success = await storage.importData(importedData, currentUser?.username || 'admin');
+                    const success = await dbAPI.importData(importedData, currentUser?.username || 'admin');
                     
                     if (success) {
                         createFloatingNotification('Данные импортированы', 'success');
